@@ -5,10 +5,12 @@ using WebApplication2.Services;
 using WebApplication2.DTO;
 using System.Net;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.Cors;
 
 namespace WebApplication2.Controllers
 {
     [Route("api/[controller]")]
+    [EnableCors()]
     [ApiController]
     public class EventsController : ControllerBase
     {
@@ -29,6 +31,23 @@ namespace WebApplication2.Controllers
                 var result = _EventsService.RetrieveEventByID(EventID);
                 if (result == null)
                     return NotFound($"Event with ID {EventID} not found");
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while retrieving the event.");
+            }
+        }
+
+        [HttpGet("GetAll")]
+        public ActionResult<Event> GetAllEvents()
+        {
+            try
+            {
+                var result = _EventsService.RetrieveEvents();
+                if (result == null)
+                    return NotFound("there are no events");
 
                 return Ok(result);
             }
@@ -102,7 +121,7 @@ namespace WebApplication2.Controllers
         }
         [HttpDelete("{EventID}")]
 
-        public ActionResult DeleteEvent(int EventID)
+        public ActionResult DeleteEvent([FromRoute] int EventID)
         {
             try
             {
@@ -124,20 +143,25 @@ namespace WebApplication2.Controllers
 
         [HttpGet]
         [Route("{id}/weather")]
-        public ActionResult<String> getEventWeather(int id)
+        public ActionResult<string> getEventWeather(int id)
         {
-            String place = _EventsService.getEventWeather1(id);
-            string apiKey = "2ace7b65be1748c0b9a124123250506";
-            if (place != null)
+            try
             {
-                string url = $"http://api.weatherapi.com/v1/forecast.json?key={apiKey}&q={place}";
-                string json = (new WebClient()).DownloadString(url);
-                _memoryCache.Set("weather", json);
+                string place = _EventsService.getEventWeather1(id);
+                string apiKey = "2ace7b65be1748c0b9a124123250506";
+                if (place == null)
+                    return NotFound("Event location not found");
+
+                string url = $"http://api.weatherapi.com/v1/forecast.json?key={apiKey}&q={place}&days=7"; 
+                string json = new WebClient().DownloadString(url);
+
+                _memoryCache.Set($"weather_{id}", json, TimeSpan.FromMinutes(30));
                 return Ok(json);
             }
-            else
-                return Ok("place not found");
-
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error fetching weather: {ex.Message}");
+            }
         }
 
     }

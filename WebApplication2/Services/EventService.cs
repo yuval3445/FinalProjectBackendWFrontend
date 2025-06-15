@@ -23,6 +23,19 @@ namespace WebApplication2.Services
 
             }
         }
+
+        public List<Event> RetrieveEvents()
+        {
+            try
+            {
+                return _EventRepo.GetAllEvents();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error retrieving events", ex);
+
+            }
+        }
         public void NewEvent(Event e1)
         {
             try
