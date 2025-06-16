@@ -1,0 +1,417 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        body {
+            background-color: #fdf6ec;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #header {
+            color: #fff;
+            background-color: #333;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        h2, h4 {
+            color: #333;
+            text-align: center;
+        }
+
+        #Eid {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        form, .section {
+            background-color: #fff;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin: 12px 0 6px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        p {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #ulEvents {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            list-style-type: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+            #ulEvents li {
+                padding: 10px;
+                border-bottom: 1px solid #ccc;
+            }
+
+                #ulEvents li:last-child {
+                    border-bottom: none;
+                }
+        .section {
+            background-color: #fff;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center; /* Center all content */
+        }
+
+            .section input,
+            .section button {
+                margin: 10px 0;
+                width: 60%;
+            }
+
+    </style>
+</head>
+<body>
+    <h1 id="header">Welcome To The Events DataBase</h1>
+    <div class="section">
+        <h2><span id="Eid">Events By ID</span></h2>
+        <h4>Please enter an event ID:</h4>
+        <input type="text" id="eventIDInput" placeholder="Event ID" />
+        <br><br>
+        <button onclick="details()">Click For Details</button>
+    </div>
+    <ul id="ulEvents"></ul>
+    <h2>Create New Event</h2>
+    <form id="eventForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br>
+        <label for="startDate">Start Date:</label>
+        <input type="datetime-local" id="startDate" required><br>
+        <label for="endDate">End Date:</label>
+        <input type="datetime-local" id="endDate" required><br>
+        <label for="maxRegistrations">Max Registrations:</label>
+        <input type="number" id="maxRegistrations" required><br>
+        <label for="location">Location:</label>
+        <input type="text" id="location" required><br>
+        <button type="button" onclick="submitEvent()">Create Event</button>
+
+    </form>
+
+    <p id="responseMessage"></p>
+    <div class="section">
+        <h2>Delete Event</h2>
+        <label for="deleteEventId">Event ID:</label>
+        <input type="number" id="deleteEventId" required>
+        <br><br>
+        <button type="button" onclick="deleteEvent()">Delete Event</button>
+        <p id="deleteResponseMessage"></p>
+    </div>
+
+    <h2>Update Event</h2>
+    <form id="updateEventForm">
+        <label for="updateEventId">Event ID:</label>
+        <input type="number" id="updateEventId" required><br>
+
+        <label for="updateName">Name:</label>
+        <input type="text" id="updateName" required><br>
+
+        <label for="updateStartDate">Start Date:</label>
+        <input type="datetime-local" id="updateStartDate" required><br>
+
+        <label for="updateEndDate">End Date:</label>
+        <input type="datetime-local" id="updateEndDate" required><br>
+
+        <label for="updateMaxRegistrations">Max Registrations:</label>
+        <input type="number" id="updateMaxRegistrations" required><br>
+
+        <label for="updateLocation">Location:</label>
+        <input type="text" id="updateLocation" required><br>
+
+        <button type="button" onclick="updateEvent()">Update Event</button>
+    </form>
+
+    <p id="updateResponseMessage"></p>
+    <h2>
+        <button onclick="ViewEvents()">View All Events</button>
+        <div id="AllEvents"></div>
+    </h2>
+    <div class="section">
+        <h2>Get 7-Day Forecast for Event</h2>
+        <input type="number" id="weatherEventId" placeholder="Enter Event ID" />
+        <button onclick="getEventForecast()">View Forecast</button>
+        <div id="weatherForecast" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        function details() {
+            const eventIDInput = document.getElementById('eventIDInput');
+            const eventID = eventIDInput.value;
+            const ul = document.getElementById('ulEvents');
+            ul.innerHTML = '';
+            const url = `http://localhost:5201/api/Events/${eventID}`;
+
+            fetch(url)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    let li = document.createElement('li');
+                    li.innerHTML = `ID: ${data.id},<br>
+                                                           Name: ${data.name}, <br>
+                                                           Start Date: ${data.startDate},<br>
+                                                           End Date: ${data.endDate},<br>
+                                                           Max Registrations: ${data.maxRegistrations},<br>
+                                                           Location: ${data.location}`;
+                    ul.appendChild(li);
+                })
+                .catch(function (error) {
+                    console.error("Fetch error: ", error);
+                    const ul = document.getElementById('ulEvents');
+                    const li = document.createElement('li');
+                    li.style.color = 'red';
+                    li.innerHTML = `Error fetching event details. Please check the Event ID and try again.`;
+                    ul.appendChild(li);
+                });
+        }
+        let evVis = false;
+
+        function ViewEvents() {
+            const d = document.getElementById('AllEvents');
+
+            if (evVis) {
+                d.innerHTML = '';
+                evVis = false;
+                return;
+            }
+
+            fetch(`http://localhost:5201/api/Events/GetAll`)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (!Array.isArray(data)) {
+                        throw new Error("Expected an array of events");
+                    }
+
+                    data.forEach(event => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            ID: ${event.id}<br>
+                            Name: ${event.name}<br>
+                            Start Date: ${event.startDate}<br>
+                            End Date: ${event.endDate}<br>
+                            Max Registrations: ${event.maxRegistrations}<br>
+                            Location: ${event.location}<br><br>
+                        `;
+                        d.appendChild(li);
+                    });
+
+                    evVis = true;
+                })
+                .catch(error => {
+                    console.error('Error fetching events:', error);
+                    d.innerHTML = `<li>Error loading events: ${error.message}</li>`;
+                });
+        }
+
+
+        function submitEvent() {
+            const event = {
+                name: document.getElementById('name').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                maxRegistrations: parseInt(document.getElementById('maxRegistrations').value),
+                location: document.getElementById('location').value
+            };
+
+            fetch('http://localhost:5201/api/Events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(event)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        return response.text().then(msg => { throw new Error(msg); });
+                    }
+                })
+                .then(message => {
+                    document.getElementById('responseMessage').textContent = message;
+                    document.getElementById('responseMessage').style.color = 'green';
+                    document.getElementById('eventForm').reset();
+                })
+                .catch(error => {
+                    document.getElementById('responseMessage').textContent = `Error: ${error.message}`;
+                    document.getElementById('responseMessage').style.color = 'red';
+                });
+        }
+
+        function deleteEvent() {
+            const eventId = document.getElementById('deleteEventId').value;
+
+            if (!eventId) {
+                document.getElementById('deleteResponseMessage').textContent = "Please enter an Event ID.";
+                document.getElementById('deleteResponseMessage').style.color = 'red';
+                return;
+            }
+
+            fetch(`http://localhost:5201/api/Events/${eventId}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        return response.text().then(msg => { throw new Error(msg); });
+                    }
+                })
+                .then(message => {
+                    document.getElementById('deleteResponseMessage').textContent = message || `Event ${eventId} deleted.`;
+                    document.getElementById('deleteResponseMessage').style.color = 'green';
+                    document.getElementById('deleteEventId').value = '';
+                })
+                .catch(error => {
+                    document.getElementById('deleteResponseMessage').textContent = `Error: ${error.message}`;
+                    document.getElementById('deleteResponseMessage').style.color = 'red';
+                });
+        }
+
+        function updateEvent() {
+            const eventId = document.getElementById('updateEventId').value;
+
+            if (!eventId) {
+                document.getElementById('updateResponseMessage').textContent = "Please enter the Event ID.";
+                document.getElementById('updateResponseMessage').style.color = 'red';
+                return;
+            }
+
+            const updatedEvent = {
+                name: document.getElementById('updateName').value,
+                startDate: document.getElementById('updateStartDate').value,
+                endDate: document.getElementById('updateEndDate').value,
+                maxRegistrations: parseInt(document.getElementById('updateMaxRegistrations').value),
+                location: document.getElementById('updateLocation').value
+            };
+
+            fetch(`http://localhost:5201/api/Events/${eventId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedEvent)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        return response.text().then(msg => { throw new Error(msg); });
+                    }
+                })
+                .then(message => {
+                    document.getElementById('updateResponseMessage').textContent = message;
+                    document.getElementById('updateResponseMessage').style.color = 'green';
+                    document.getElementById('updateEventForm').reset();
+                })
+                .catch(error => {
+                    document.getElementById('updateResponseMessage').textContent = `Error: ${error.message}`;
+                    document.getElementById('updateResponseMessage').style.color = 'red';
+                });
+        }
+       
+            function getEventForecast() {
+        const eventId = document.getElementById('weatherEventId').value;
+            const forecastDiv = document.getElementById('weatherForecast');
+            forecastDiv.innerHTML = 'Loading...';
+
+            fetch(`http://localhost:5201/api/Events/${eventId}/weather`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch weather: ${response.status}`);
+                }
+            return response.json(); // WeatherAPI JSON response
+            })
+            .then(data => {
+                if (!data.forecast || !data.forecast.forecastday) {
+                forecastDiv.innerHTML = 'No forecast data found.';
+            return;
+                }
+
+            let html = `<h4>7-Day Forecast for ${data.location.name}, ${data.location.country}</h4>`;
+            html += '<ul style="list-style-type: none; padding: 0;">';
+
+                data.forecast.forecastday.forEach(day => {
+                    html += `
+                        <li style="margin-bottom: 10px;">
+                            <strong>${day.date}:</strong>
+                            <img src="https:${day.day.condition.icon}" alt="${day.day.condition.text}" style="vertical-align: middle;">
+                            ${day.day.condition.text},
+                            Avg: ${day.day.avgtemp_c}°C,
+                            Max: ${day.day.maxtemp_c}°C,
+                            Min: ${day.day.mintemp_c}°C
+                        </li>`;
+                });
+
+                html += '</ul>';
+            forecastDiv.innerHTML = html;
+            })
+            .catch(error => {
+                forecastDiv.innerHTML = 'Error fetching weather forecast.';
+            console.error(error);
+            });
+}
+
+
+
+    </script>
+</body>
+</html>

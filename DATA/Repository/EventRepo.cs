@@ -21,6 +21,10 @@ namespace DATA.Repository
             return _db.Events.FirstOrDefault(p => p.Id == id);
         }
 
+        public List<Event> GetAllEvents()
+        {
+            return _db.Events.ToList();
+        }
         public void InsertEvent(Event e)
         {
             _db.Events.Add(e);
